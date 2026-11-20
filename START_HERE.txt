@@ -1,0 +1,5 @@
+PRAPOSHAN HQ v7
+1. Open index.html in Chrome (or open the web address if it is on GitHub Pages).
+2. Settings (bottom left): enter your name, paste your personal key, Save and connect.
+3. My profile > New key to replace the key you were given with one only you know.
+New in v7: simpler sidebar (More shows the rest), direct messages to one person, files sent to a person or a channel, Cancel on any task (or type /cancel and a few words in Messages), meeting transcripts picked up automatically (backend setup once: run setupMeetingSweep in HQDesk_v7.gs).
