@@ -1,11 +1,11 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-t3fu7P4bExqYOmjtGGREmr9SD8jIAe7dir4R4kgvm1k='; style-src 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="referrer" content="no-referrer"><meta name="referrer" content="no-referrer"><meta name="referrer" content="no-referrer"><meta name="referrer" content="no-referrer"><meta name="referrer" content="no-referrer"><meta name="referrer" content="no-referrer"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width, initial-scale=1">
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-NbhiydmWg22HN0RAjDRYfTDD6ilT/gy/so2s/TrXeVk='; style-src 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'"><meta name="referrer" content="no-referrer"><meta name="referrer" content="no-referrer"><meta name="referrer" content="no-referrer"><meta name="referrer" content="no-referrer"><meta name="referrer" content="no-referrer"><meta name="referrer" content="no-referrer"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PRAPOSHAN HQ</title><meta name="robots" content="noindex"><meta name="theme-color" content="#0F1113">
 <style>
-@font-face{font-family:"Syncopate";src:url(assets/fonts/syncopate-400.woff2) format("woff2")}
-@font-face{font-family:"Archivo";src:url(assets/fonts/archivo-600.woff2) format("woff2");font-weight:600}
-@font-face{font-family:"Geist";src:url(assets/fonts/geist-400.woff2) format("woff2");font-weight:400}
-@font-face{font-family:"Geist";src:url(assets/fonts/geist-600.woff2) format("woff2");font-weight:600}
-@font-face{font-family:"Geist Mono";src:url(assets/fonts/geist-mono-400.woff2) format("woff2")}
+@font-face{font-family:"Syncopate";src:url(syncopate-400.woff2) format("woff2")}
+@font-face{font-family:"Archivo";src:url(archivo-600.woff2) format("woff2");font-weight:600}
+@font-face{font-family:"Geist";src:url(geist-400.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"Geist";src:url(geist-600.woff2) format("woff2");font-weight:600}
+@font-face{font-family:"Geist Mono";src:url(geist-mono-400.woff2) format("woff2")}
 :root{--bg:#0F1113;--side:#0B0D0F;--card:#16191D;--card2:#1D2126;--line:#252A30;--ink:#E9EEF2;--sub:#9AA3AD;--mute:#646C75;--ice:#9EC1D6;--warm:#D4A27A;--green:#7CC4A0;--red:#E08A7E}
 *{box-sizing:border-box}html,body{height:100%}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Geist,system-ui,sans-serif}
 h1,h2,h3{font-family:Archivo;font-weight:600;margin:0;letter-spacing:-.01em}h1{font-size:24px}h2{font-size:17px}h3{font-size:14.5px}
@@ -117,6 +117,7 @@ function act(a,b){ /* optimistic local change, then send if live */
  if(a==='hq_event'&&b.type==='mkt'){D.mkt=D.mkt||[];D.mkt.push({ts:now,p:b.platform,m:b.metric,v:+b.value||0,by:ME})}
  if(a==='hq_msg')D.msgs.push({ts:now,ch:b.ch,who:ME,text:b.text});
  if(a==='hq_ship')D.ship.push({ts:now,who:ME,type:b.type,text:b.text,proof:b.proof||''});
+ if(a==='hq_file_move'){D.files.forEach(function(x){if(x.name===b.name&&x.ts===b.ts)x.ch=b.ch})}
  if(a==='hq_link')D.files.push({ts:now,ch:b.ch,who:ME,name:b.name,url:b.url,kb:''});
  if(a==='hq_meeting'){if(b.end)D.meeting=null;else{D.meeting={ts:now,who:ME,url:b.url};D.msgs.push({ts:now,ch:'general',who:ME,text:'Meeting is live: '+b.url})}}
  save();
@@ -343,10 +344,20 @@ function chatCancel(txt){var q=txt.replace(/^\/cancel\s*/i,'').toLowerCase().spl
  var hit=pool.filter(function(x){var n=(x.t||'').toLowerCase();return q.every(function(w){return n.indexOf(w)>=0})});
  if(hit.length===1){act('hq_task',{id:hit[0].id,status:'Cancelled',why:'Not needed any more'});S.err='';toast('Cancelled: '+hit[0].t);return}
  S.err=hit.length?'More than one task matches: '+hit.slice(0,4).map(function(x){return x.t}).join(' | ')+'. Add another word.':'No open task of yours matches that.'}
-function vFiles(){var h=topbar('Files','Drop a file or paste a link. Pick a channel, or a person to send it to directly.');
- h+='<div class="drop" id="drop">Drop files here (up to 8 MB each) or <label style="color:var(--ice);cursor:pointer">choose files<input type="file" id="fi" multiple style="display:none"></label>'+(D.demo?'<div class="small mute" style="margin-top:6px">Demo mode: file names are listed, the files themselves upload once you connect.</div>':'')+'</div>';
- h+='<div class="row" style="margin:12px 0"><input id="ln" placeholder="Name" style="width:200px"><input id="lu" placeholder="Paste a Drive, Notion or any https link" style="flex:1"><select id="lc">'+CH.map(function(c){return '<option value="'+c+'"># '+c+'</option>'}).join('')+(D.team||[]).filter(function(p){return p.name!==ME}).map(function(p){return '<option value="dm:'+esc(p.name)+'">To '+esc(p.name)+'</option>'}).join('')+'</select><button class="btn" data-addl="1">Share link</button></div>';
- var fs=D.files.filter(fileVisible).reverse();return h+'<div class="card"><table><tr><th>Name</th><th>Channel</th><th>By</th><th>When</th><th></th></tr>'+(fs.length?fs.map(function(f){return '<tr><td><b>'+esc(f.name)+'</b>'+(f.kb?' <span class="mute small">'+f.kb+' KB</span>':'')+'</td><td>'+esc(chLabel(f.ch))+'</td><td>'+esc(f.who)+'</td><td>'+ago(f.ts)+'</td><td>'+(f.url?'<a class="btn gh sm" href="'+esc(f.url)+'" target="_blank" rel="noopener">Open</a>':'')+'</td></tr>'}).join(''):'<tr><td colspan="5" class="sub">No files yet.</td></tr>')+'</table></div>'}
+function destOpts(sel){return '<option value="">Choose who to send to...</option><optgroup label="Channels (everyone in it can see)">'+CH.map(function(c){return '<option value="'+c+'"'+(sel===c?' selected':'')+'># '+c+'</option>'}).join('')+'</optgroup><optgroup label="Direct to one person (only you and them)">'+(D.team||[]).filter(function(p){return p.name!==ME}).map(function(p){return '<option value="dm:'+esc(p.name)+'"'+(sel==='dm:'+p.name?' selected':'')+'>'+esc(p.name)+'</option>'}).join('')+'</optgroup>'}
+function destName(c){c=String(c);return c.indexOf('dm:')===0?c.slice(3)+' (direct)':'# '+c}
+function canMove(f){return f.who===ME||role()==='Founder'||role()==='Lead'}
+function vFiles(){var h=topbar('Files','Choose who it goes to first, then drop the file or paste a link. Sent to the wrong place? Tap Change on that file.');
+ h+='<div class="card" style="margin-bottom:12px"><h3>1. Send to</h3><select id="uc" style="width:100%;margin-top:8px">'+destOpts(S.upTo||'')+'</select></div>';
+ h+='<div class="drop" id="drop"><b>2.</b> Drop files here (HTML, ZIP, PDF, Office, images, text or video, up to 8 MB each) or <label style="color:var(--ice);cursor:pointer">choose files<input type="file" id="fi" multiple style="display:none"></label>'+(D.demo?'<div class="small mute" style="margin-top:6px">Demo mode: file names are listed, the files themselves upload once you connect.</div>':'')+'</div>';
+ h+='<div class="row" style="margin:12px 0"><input id="ln" placeholder="Or a name for a link" style="width:200px"><input id="lu" placeholder="Paste a Drive, Notion or any https link" style="flex:1"><button class="btn" data-addl="1">Share link</button></div>';
+ var sf=null;if(S.sent){D.files.forEach(function(x){if(x.name===S.sent.name&&String(x.ch)===String(S.sent.ch))sf=x});if(!sf)sf=S.sent.f||null}
+ if(sf)h+='<div class="card" style="border-color:var(--ice);margin-bottom:12px"><b>Sent: '+esc(sf.name)+'</b> to '+esc(destName(sf.ch))+'. <span class="sub small">Wrong place?</span> <button class="btn gh sm" data-fmove="'+D.files.indexOf(sf)+'">Change</button></div>';
+ var fs=D.files.filter(fileVisible).reverse();return h+'<div class="card"><table><tr><th>Name</th><th>Sent to</th><th>By</th><th>When</th><th></th></tr>'+(fs.length?fs.map(function(f){return '<tr><td><b>'+esc(f.name)+'</b>'+(f.kb?' <span class="mute small">'+f.kb+' KB</span>':'')+'</td><td>'+esc(destName(f.ch))+'</td><td>'+esc(f.who)+'</td><td>'+ago(f.ts)+'</td><td>'+(f.url?'<a class="btn gh sm" href="'+esc(f.url)+'" target="_blank" rel="noopener">Open</a> ':'')+(canMove(f)?'<button class="btn gh sm" data-fmove="'+D.files.indexOf(f)+'">Change</button>':'')+'</td></tr>'}).join(''):'<tr><td colspan="5" class="sub">No files yet.</td></tr>')+'</table></div>'}
+function moveFile(i){var f=D.files[i];if(!f)return;var d=dlg('<h2>Change who this goes to</h2><div class="sub small" style="margin:6px 0 10px"><b>'+esc(f.name)+'</b><br>Now: '+esc(destName(f.ch))+'</div><select id="mvc" style="width:100%">'+destOpts(f.ch)+'</select><div class="small" id="mverr" style="color:var(--amber);min-height:18px;margin-top:8px"></div><button class="btn" id="mvok" style="margin-top:6px">Move it</button>');
+ d.querySelector('#mvok').onclick=function(){var v=d.querySelector('#mvc').value;if(!v){d.querySelector('#mverr').textContent='Choose who it should go to.';return}if(v===f.ch){d.close();return}
+  var ok=d.querySelector('#mvok');ok.disabled=true;ok.textContent='Moving...';S.err='';
+  act('hq_file_move',{url:f.url||'',name:f.name,ts:f.ts,ch:v}).then(function(){if(S.err){d.querySelector('#mverr').textContent=S.err;ok.disabled=false;ok.textContent='Move it';return}S.sent=null;d.close();toast('Moved to '+destName(v));pull();render()})}}
 function links(){var l=LS.g('links',null);if(!l)l=LINKS0.map(function(x){return x.slice()});return l}
 function vLinks(){var L=links(),groups=['Customer-facing','Meetings','Social pages'];
  var h=topbar('Links & sharing','One place for every link the team and customers need. Tag a link by source to see where audits come from.');
@@ -356,10 +367,14 @@ function vOS(){var R=[['Close with an outcome','A task closes with a link, a fil
  return topbar('How we run','The few rules that keep the team fast without managing anyone.')+'<div class="grid g2">'+R.map(function(r,i){return '<div class="card"><div class="mono small mute">0'+(i+1)+'</div><h3 style="margin:4px 0 6px">'+r[0]+'</h3><div class="sub">'+r[1]+'</div></div>'}).join('')+'</div>'}
 function render(){TODAY=day();document.getElementById('side').innerHTML=side();document.getElementById('main').innerHTML=banner()+({pulse:vPulse,tech:vTech,eod:vEod,ask:vAsk,home:vHome,today:vToday,dept:vDept,chat:vChat,files:vFiles,links:vLinks,os:vOS,reports:vReports,inbox:vInbox,decisions:vDecisions,team:vTeam,me:vMe})[S.view]();var f=document.getElementById('feed');if(f)f.scrollTop=f.scrollHeight;
  var fic=document.getElementById('fi');if(fic&&!document.getElementById('drop'))fic.onchange=function(e){upload(e.target.files);e.target.value=''};var dr=document.getElementById('drop');if(dr){dr.ondragover=function(e){e.preventDefault();dr.classList.add('over')};dr.ondragleave=function(){dr.classList.remove('over')};dr.ondrop=function(e){e.preventDefault();dr.classList.remove('over');upload(e.dataTransfer.files)};document.getElementById('fi').onchange=function(e){upload(e.target.files)}}}
-function upCh(){if(S.view==='chat')return S.ch;var s=document.getElementById('lc');return s&&s.value?s.value:'general'}
-function upload(fl){Array.prototype.forEach.call(fl,function(f){if(f.size>8*1048576){S.err=f.name+' is over 8 MB: share a Drive link instead';render();return}
- if(D.demo||!KEY){act('hq_link',{ch:upCh(),name:f.name,url:''});render();return}
- var r=new FileReader();r.onload=function(){var b64=String(r.result).split(',')[1];S.err='Uploading '+f.name+'...';render();api('hq_file',{ch:upCh(),name:f.name,mime:f.type,b64:b64}).then(function(x){S.err=x.ok?'':x.error;pull();render()}).catch(function(){S.err='Upload failed';render()})};r.readAsDataURL(f)})}
+function upCh(){if(S.view==='chat')return S.ch;var s=document.getElementById('uc');return s?s.value:(S.upTo||'')}
+var OKX=/\.(png|jpe?g|gif|webp|pdf|txt|csv|mp4|mov|mp3|m4a|docx|xlsx|pptx|html?|zip)$/i;
+function upload(fl){var to=upCh();if(!to){S.err='Choose who to send it to first (step 1), then add the file.';render();return}S.upTo=to;
+ Array.prototype.forEach.call(fl,function(f){if(f.size>8*1048576){S.err=f.name+' is over 8 MB: share a Drive link instead';render();return}
+ if(!OKX.test(f.name)){S.err=f.name+': this file type is not allowed. Use HTML, ZIP, PDF, Office, image, text or video.';render();return}
+ if(D.demo||!KEY){act('hq_link',{ch:to,name:f.name,url:''});S.sent={name:f.name,ch:to};render();return}
+ var r=new FileReader();r.onload=function(){var b64=String(r.result).split(',')[1];S.err='Uploading '+f.name+'...';render();api('hq_file',{ch:to,name:f.name,mime:f.type||'',b64:b64}).then(function(x){S.err=x.ok?'':x.error;if(x.ok)S.sent={name:f.name,ch:to};pull();render()}).catch(function(){S.err='Upload failed';render()})};r.readAsDataURL(f)})}
+document.addEventListener('change',function(e){if(e.target&&e.target.id==='uc')S.upTo=e.target.value});
 /* ---------- events ---------- */
 function dlg(html,cls){var d=document.getElementById('dlg');d.className=cls||'';d.innerHTML='<button class="x" data-dclose="1" aria-label="Close" title="Close">\u2715</button>'+html;if(!d.open)d.showModal();return d}
 (function(){var d=document.getElementById('dlg');d.addEventListener('click',function(e){if(e.target!==d)return;var r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close()})})();
@@ -547,7 +562,8 @@ document.addEventListener('click',function(e){var q=function(s){return e.target.
  if(el=q('[data-cancel]')){var cid=el.dataset.cancel;ask('Cancel this task','Why is it not needed any more? (optional)','',function(v){act('hq_task',{id:cid,status:'Cancelled',why:v||'Not needed any more'});render()});return}  if(q('[data-more]')){S.more=!S.more;render();return}  if(el=q('[data-ch]')){S.view='chat';S.ch=el.dataset.ch;render();return}
  if(q('[data-send]')){var i=document.getElementById('mt'),x=i.value.trim();if(!x)return;if(/^\/cancel\b/i.test(x)){chatCancel(x);render();return}act('hq_msg',{ch:S.ch,text:x});render();return}
  if(el=q('[data-quick]')){var i2=document.getElementById('mt');i2.value=el.dataset.quick;i2.focus();return}
- if(q('[data-addl]')){var u=document.getElementById('lu').value.trim();if(!/^https:\/\//.test(u)){S.err='Links must start with https://';render();return}act('hq_link',{ch:document.getElementById('lc').value,name:document.getElementById('ln').value.trim()||u,url:u});S.err='';render();return}
+ if(el=q('[data-fmove]')){moveFile(+el.dataset.fmove);return}
+ if(q('[data-addl]')){var u=document.getElementById('lu').value.trim(),to=upCh();if(!to){S.err='Choose who to send it to first (step 1).';render();return}if(!/^https:\/\//.test(u)){S.err='Links must start with https://';render();return}S.upTo=to;act('hq_link',{ch:to,name:document.getElementById('ln').value.trim()||u,url:u});S.sent={name:document.getElementById('ln').value.trim()||u,ch:to};S.err='';render();return}
  if(el=q('[data-cp]')){navigator.clipboard.writeText(el.dataset.cp).then(function(){el.textContent='Copied'});return}
  if(q('[data-tag]')){var b=document.getElementById('tl').value,s=document.getElementById('ts').value,u2=b+(b.indexOf('?')>=0?'&':'?')+'src='+s;navigator.clipboard.writeText(u2).then(function(){document.getElementById('tg').textContent='Copied: '+u2});return}
  if(el=q('[data-ed]')){var L=links(),i3=+el.dataset.ed;ask('Link for '+L[i3][1],'Starts with https://',L[i3][2],function(v){if(v===''||/^https:\/\//.test(v)){L[i3][2]=v.trim();LS.s('links',L);render()}else toast('The link must start with https://')});return}
